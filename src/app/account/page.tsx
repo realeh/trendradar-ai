@@ -1,11 +1,17 @@
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
-import { getOpenAIConfigStatus, getStripeConfigStatus, getSupabaseConfigStatus } from "@/lib/integrations";
+import { getAIConfigStatus, getAIProvider, getStripeConfigStatus, getSupabaseConfigStatus } from "@/lib/integrations";
+
+const aiProvider = getAIProvider();
 
 const checks = [
   { label: "Supabase auth/database", ready: getSupabaseConfigStatus(), env: "NEXT_PUBLIC_SUPABASE_URL" },
   { label: "Stripe subscriptions", ready: getStripeConfigStatus(), env: "STRIPE_SECRET_KEY" },
-  { label: "OpenAI responses", ready: getOpenAIConfigStatus(), env: "OPENAI_API_KEY" }
+  {
+    label: aiProvider === "claude" ? "Claude AI responses" : aiProvider === "openai" ? "OpenAI responses" : "AI responses",
+    ready: getAIConfigStatus(),
+    env: "ANTHROPIC_API_KEY or OPENAI_API_KEY"
+  }
 ];
 
 export default function AccountPage() {
@@ -19,7 +25,7 @@ export default function AccountPage() {
         />
         <section className="rounded-md border border-black/10 bg-white/68 p-5 shadow-panel dark:border-white/10 dark:bg-white/6">
           <div className="grid gap-4 md:grid-cols-3">
-            <Panel label="Current plan" value="Growth Trial" detail="Mock subscription state" />
+            <Panel label="Current plan" value="Growth Trial" detail="Sample state until Stripe is connected" />
             <Panel label="Billing cycle" value="Monthly" detail="Stripe checkout pending" />
             <Panel label="AI credits" value="1,250" detail="Demo usage balance" />
           </div>

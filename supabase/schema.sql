@@ -90,6 +90,10 @@ begin
   insert into public.profiles (id, email)
   values (new.id, new.email)
   on conflict (id) do nothing;
+
+  insert into public.analytics_events (event_type, user_id, metadata)
+  values ('signup', new.id, jsonb_build_object('email', new.email));
+
   return new;
 end;
 $$;
@@ -98,3 +102,69 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- Real curated product catalog (sourced from CJ Dropshipping + admin/AI curation).
+-- Documented here for reproducibility; if this table already exists in your
+-- project (it was originally created directly via the Supabase SQL editor),
+-- this is a no-op thanks to `if not exists`.
+create table if not exists public.curated_products (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  category text not null,
+  country text not null default 'United States',
+  platform text not null,
+  trend_score numeric not null default 70,
+  launch_score numeric not null default 70,
+  growth numeric not null default 20,
+  saturation text not null,
+  profit_margin numeric not null default 60,
+  viral_potential numeric not null default 60,
+  demand numeric not null default 60,
+  competition numeric not null default 50,
+  trend_momentum numeric not null default 60,
+  supplier_reliability numeric not null default 70,
+  shipping_ease numeric not null default 70,
+  suggested_price numeric not null default 0,
+  estimated_cost numeric not null default 0,
+  target_audience text,
+  why_trending text,
+  trend_forecast text,
+  supplier_notes text,
+  ai_recommendation text,
+  risks text[] not null default '{}',
+  similar_alternatives text[] not null default '{}',
+  ad_angles text[] not null default '{}',
+  early_signal text,
+  data_source text not null default 'manual' check (data_source in ('cj_dropshipping', 'manual', 'demo')),
+  cj_product_id text,
+  source_url text,
+  listed_num integer,
+  verified_inventory integer,
+  delivery_cycle_days text,
+  cj_trending_flag boolean default false,
+  curator_trend_assessment numeric,
+  curator_notes text,
+  curated_by text default 'admin',
+  status text not null default 'active' check (status in ('active', 'archived')),
+  curated_at timestamptz default now(),
+  created_at timestamptz default now()
+);
+
+alter table public.curated_products enable row level security;
+-- No public policies: reads/writes only go through the server-side admin
+-- (service role) client in this app, same posture as billing_events below.
+-- This keeps internal curator_notes and similar fields out of the anon API.
+
+-- Lightweight product analytics: signups, checkout funnel, and (via the
+-- Stripe webhook) subscription churn events, so there's a real record to
+-- build conversion/churn dashboards from without a third-party analytics tool.
+create table if not exists public.analytics_events (
+  id uuid primary key default gen_random_uuid(),
+  event_type text not null,
+  user_id uuid references auth.users(id) on delete set null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz default now()
+);
+
+alter table public.analytics_events enable row level security;
+-- No public policies: only the server-side admin client writes/reads these.

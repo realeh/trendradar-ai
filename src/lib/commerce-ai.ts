@@ -1,6 +1,5 @@
 import type { CommerceAIResponse, CommerceIntent, CommerceRecommendation, Platform, Product } from "./types";
 import { forecastProduct } from "./forecast-engine";
-import { products } from "./mock-products";
 import { opportunityScore } from "./scoring";
 
 const platformMap: Record<string, Platform> = {
@@ -13,9 +12,9 @@ const platformMap: Record<string, Platform> = {
   amazon: "Amazon"
 };
 
-export function analyzeCommerceQuestion(question: string): CommerceAIResponse {
+export function analyzeCommerceQuestion(question: string, products: Product[]): CommerceAIResponse {
   const intent = extractIntent(question);
-  const recommendations = rankProducts(intent).slice(0, 4);
+  const recommendations = rankProducts(intent, products).slice(0, 4);
 
   return {
     intent,
@@ -52,7 +51,7 @@ function extractIntent(question: string): CommerceIntent {
   };
 }
 
-function rankProducts(intent: CommerceIntent): CommerceRecommendation[] {
+function rankProducts(intent: CommerceIntent, products: Product[]): CommerceRecommendation[] {
   return products
     .filter((product) => !intent.excludedCategories.includes(product.category))
     .map((product) => {
@@ -102,7 +101,7 @@ function explainChoice(product: Product, intent: CommerceIntent) {
 
 function buildSummary(intent: CommerceIntent, recommendations: CommerceRecommendation[]) {
   const top = recommendations[0]?.product;
-  if (!top) return "I could not find a clean fit in the current mock catalog, so I would broaden the constraints before recommending inventory.";
+  if (!top) return "I could not find a clean fit in the current catalog, so I would broaden the constraints before recommending inventory.";
 
   const constraints = [
     intent.countries.length ? `market: ${intent.countries.join(", ")}` : "market: flexible",

@@ -7,19 +7,19 @@ import { PageHeader } from "@/components/page-header";
 const plans = [
   {
     name: "Starter",
-    price: "$29",
+    price: "$19",
     description: "For testing product ideas and building a first store.",
     features: ["AI Discovery", "Trending products", "New Store Mode", "Product Simulator"]
   },
   {
     name: "Growth",
-    price: "$79",
+    price: "$49",
     description: "For operators running weekly product research.",
     features: ["Everything in Starter", "Hidden Gems", "Saved research boards", "Team-ready exports"]
   },
   {
     name: "Scale",
-    price: "$199",
+    price: "$99",
     description: "For agencies and multi-store ecommerce teams.",
     features: ["Everything in Growth", "API integrations", "Supplier intelligence", "Priority AI credits"]
   }
@@ -32,7 +32,7 @@ export default function PricingPage() {
         <PageHeader
           eyebrow="Pricing"
           title="Choose your radar range"
-          description="Stripe-ready subscription tiers for the MVP. Checkout wiring can be enabled once products and price IDs are created."
+          description="Simple monthly plans, billed through Stripe. Cancel anytime."
         />
         <div className="grid gap-4 lg:grid-cols-3">
           {plans.map((plan, index) => (
@@ -61,6 +61,12 @@ export default function PricingPage() {
             </article>
           ))}
         </div>
+        <p className="text-xs font-bold text-ink/45 dark:text-paper/45">
+          By subscribing you agree to our{" "}
+          <Link href="/terms" className="underline hover:text-ink dark:hover:text-paper">Terms of Service</Link>,{" "}
+          <Link href="/privacy" className="underline hover:text-ink dark:hover:text-paper">Privacy Policy</Link>, and{" "}
+          <Link href="/refund-policy" className="underline hover:text-ink dark:hover:text-paper">Refund Policy</Link>.
+        </p>
       </div>
     </AppShell>
   );

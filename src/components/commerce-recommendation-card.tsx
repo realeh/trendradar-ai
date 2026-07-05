@@ -2,6 +2,7 @@ import { Activity, AlertTriangle, ArrowRight, BadgeDollarSign, CalendarClock, Gl
 import type { CommerceRecommendation } from "@/lib/types";
 import { saturationColor } from "@/lib/scoring";
 import { ScoreRing } from "./score-ring";
+import { SupplierLink } from "./supplier-link";
 
 export function CommerceRecommendationCard({ recommendation }: { recommendation: CommerceRecommendation }) {
   const { product, opportunityScore, whyChosen, forecast } = recommendation;
@@ -27,6 +28,7 @@ export function CommerceRecommendationCard({ recommendation }: { recommendation:
             <span className="rounded-md bg-tide/12 px-2.5 py-1 text-xs font-bold text-tide dark:text-cyan-200">
               {product.platform}
             </span>
+            <SupplierLink url={product.sourceUrl} />
           </div>
           <h3 className="mt-3 text-2xl font-black leading-tight">{product.name}</h3>
           <p className="mt-2 text-sm leading-6 text-ink/68 dark:text-paper/68">{whyChosen}</p>

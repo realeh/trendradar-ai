@@ -97,6 +97,17 @@ export type Product = {
   similarAlternatives: string[];
   adAngles: string[];
   earlySignal?: string;
+  dataSource?: "cj_dropshipping" | "manual" | "demo";
+  cjProductId?: string;
+  sourceUrl?: string;
+  listedNum?: number;
+  verifiedInventory?: number;
+  deliveryCycleDays?: string;
+  cjTrendingFlag?: boolean;
+  curatorTrendAssessment?: number;
+  curatorNotes?: string;
+  curatedBy?: string;
+  curatedAt?: string;
 };
 
 export type CommerceIntent = {

@@ -11,7 +11,7 @@ const categorySeasonality: Record<string, number> = {
 };
 
 export function forecastProduct(product: Product): ProductForecast {
-  const signals = simulateSignals(product);
+  const signals = deriveSignals(product);
   const demandPressure = weightedAverage([
     [signals.googleSearchGrowth, 0.14],
     [signals.tiktokCreatorGrowth, 0.13],
@@ -60,19 +60,33 @@ export function forecastProduct(product: Product): ProductForecast {
   };
 }
 
-function simulateSignals(product: Product): ForecastSignalSet {
+function deriveSignals(product: Product): ForecastSignalSet {
   const saturationPenalty = product.saturation === "High" ? 16 : product.saturation === "Medium" ? 7 : 0;
   const platformLift = product.platform === "TikTok" ? 8 : product.platform === "Pinterest" ? 5 : product.platform === "Google" ? 4 : 1;
+  const hasRealCatalogData = product.dataSource === "cj_dropshipping";
+  const curatorAssessment = product.curatorTrendAssessment;
+
+  const socialEstimate = curatorAssessment ?? clamp(Math.round(product.viralPotential * 0.58 + product.growth * 0.7 + platformLift - saturationPenalty), 18, 99);
+
+  const supplierAvailability = hasRealCatalogData && product.verifiedInventory !== undefined
+    ? clamp(Math.round((product.verifiedInventory / 10)), 20, 99)
+    : clamp(Math.round(product.supplierReliability * 0.7 + product.shippingEase * 0.26), 20, 99);
+
+  const competitionGrowth = hasRealCatalogData && product.listedNum !== undefined
+    ? clamp(Math.round(20 + Math.log10(product.listedNum + 1) * 25), 12, 98)
+    : clamp(Math.round(product.competition * 0.7 + product.growth * 0.45 + (product.saturation === "High" ? 14 : 0)), 12, 98);
 
   return {
-    googleSearchGrowth: clamp(Math.round(product.demand * 0.54 + product.trendMomentum * 0.32 + product.growth * 0.55 - saturationPenalty), 20, 98),
-    tiktokCreatorGrowth: clamp(Math.round(product.viralPotential * 0.58 + product.growth * 0.7 + platformLift - saturationPenalty), 18, 99),
-    videoEngagement: clamp(Math.round(product.viralPotential * 0.72 + product.trendMomentum * 0.22 - saturationPenalty * 0.5), 20, 99),
+    googleSearchGrowth: curatorAssessment ?? clamp(Math.round(product.demand * 0.54 + product.trendMomentum * 0.32 + product.growth * 0.55 - saturationPenalty), 20, 98),
+    tiktokCreatorGrowth: socialEstimate,
+    videoEngagement: curatorAssessment ?? clamp(Math.round(product.viralPotential * 0.72 + product.trendMomentum * 0.22 - saturationPenalty * 0.5), 20, 99),
     pinterestSaves: clamp(Math.round((product.category === "Home" || product.category === "Kitchen" || product.category === "Garden" ? 18 : 5) + product.demand * 0.48 + product.growth * 0.45), 18, 96),
-    marketplaceSalesGrowth: clamp(Math.round(product.demand * 0.42 + product.growth * 0.82 + product.profitMargin * 0.18), 18, 98),
-    supplierAvailability: clamp(Math.round(product.supplierReliability * 0.7 + product.shippingEase * 0.26), 20, 99),
-    competitionGrowth: clamp(Math.round(product.competition * 0.7 + product.growth * 0.45 + (product.saturation === "High" ? 14 : 0)), 12, 98),
-    searchMomentum: clamp(Math.round(product.trendMomentum * 0.68 + product.demand * 0.2 + product.growth * 0.35), 20, 99),
+    marketplaceSalesGrowth: hasRealCatalogData && product.listedNum !== undefined
+      ? clamp(Math.round(100 - Math.log10(product.listedNum + 1) * 18), 18, 98)
+      : clamp(Math.round(product.demand * 0.42 + product.growth * 0.82 + product.profitMargin * 0.18), 18, 98),
+    supplierAvailability,
+    competitionGrowth,
+    searchMomentum: curatorAssessment ?? clamp(Math.round(product.trendMomentum * 0.68 + product.demand * 0.2 + product.growth * 0.35), 20, 99),
     trendAcceleration: clamp(Math.round(product.growth * 1.15 + product.trendMomentum * 0.42 - saturationPenalty), 12, 96),
     seasonality: categorySeasonality[product.category] ?? 64
   };
@@ -92,7 +106,13 @@ function explainConfidence(product: Product, signals: ForecastSignalSet, confide
     product.saturation === "High" ? "current saturation is already high" : ""
   ].filter(Boolean);
 
-  return `Confidence is ${confidence}/100 because ${positives.length ? positives.join(", ") : "the signal mix is balanced"}. ${concerns.length ? `Watch-outs: ${concerns.join(", ")}.` : "No single simulated signal is overwhelming the forecast."}`;
+  const provenance = product.dataSource === "cj_dropshipping"
+    ? "Catalog and inventory signals are pulled from live CJ Dropshipping data; social/search signals are still a curator estimate unless noted."
+    : product.dataSource === "demo"
+      ? "This is demo data, not a live product - replace it by curating real products in /admin/curate."
+      : "";
+
+  return ("Confidence is " + confidence + "/100 because " + (positives.length ? positives.join(", ") : "the signal mix is balanced") + ". " + (concerns.length ? ("Watch-outs: " + concerns.join(", ") + ".") : "No single signal is overwhelming the forecast.") + " " + provenance).trim();
 }
 
 function trendLifespan(confidence: number, competitionGrowth: number, acceleration: number) {

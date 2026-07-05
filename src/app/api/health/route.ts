@@ -9,7 +9,8 @@ export async function GET() {
     integrations: {
       supabase: status.supabase,
       stripe: status.stripe,
-      openai: status.openai
+      ai: status.ai,
+      aiProvider: status.aiProvider
     }
   });
 }

@@ -1,8 +1,7 @@
 import type { BeginnerLaunchRecommendation, BeginnerLaunchSignalSet, Product } from "./types";
 import { forecastProduct } from "./forecast-engine";
-import { products } from "./mock-products";
 
-export function getNewStoreRecommendations(): BeginnerLaunchRecommendation[] {
+export function getNewStoreRecommendations(products: Product[]): BeginnerLaunchRecommendation[] {
   return products
     .map((product) => {
       const forecast = forecastProduct(product);
@@ -25,7 +24,7 @@ export function getNewStoreRecommendations(): BeginnerLaunchRecommendation[] {
     .sort((a, b) => b.beginnerLaunchScore - a.beginnerLaunchScore);
 }
 
-export function getExcludedNewStoreProducts(): BeginnerLaunchRecommendation[] {
+export function getExcludedNewStoreProducts(products: Product[]): BeginnerLaunchRecommendation[] {
   return products
     .map((product) => {
       const forecast = forecastProduct(product);

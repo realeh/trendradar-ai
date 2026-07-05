@@ -2,6 +2,7 @@ import { ArrowUpRight, BadgeDollarSign, Megaphone, PackageCheck } from "lucide-r
 import type { Product } from "@/lib/types";
 import { opportunityScore, saturationColor } from "@/lib/scoring";
 import { ScoreRing } from "./score-ring";
+import { SupplierLink } from "./supplier-link";
 
 export function ProductCard({ product }: { product: Product }) {
   return (
@@ -25,6 +26,7 @@ export function ProductCard({ product }: { product: Product }) {
             <span className="rounded-md bg-tide/12 px-2.5 py-1 text-xs font-bold text-tide dark:text-cyan-200">
               {product.platform}
             </span>
+            <SupplierLink url={product.sourceUrl} />
           </div>
           <h3 className="mt-3 text-xl font-black leading-tight">{product.name}</h3>
           <p className="mt-2 text-sm leading-6 text-ink/66 dark:text-paper/66">{product.whyTrending}</p>

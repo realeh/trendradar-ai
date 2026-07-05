@@ -1,5 +1,6 @@
 import { AlertTriangle, Clock, Gauge, Radar, ShieldAlert, Sparkles, TrendingUp } from "lucide-react";
 import type { HiddenGemRecommendation } from "@/lib/types";
+import { SupplierLink } from "./supplier-link";
 
 export function HiddenGemCard({ item }: { item: HiddenGemRecommendation }) {
   const { product } = item;
@@ -26,6 +27,7 @@ export function HiddenGemCard({ item }: { item: HiddenGemRecommendation }) {
               <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200">
                 {product.platform}
               </span>
+              <SupplierLink url={product.sourceUrl} />
             </div>
             <h2 className="mt-3 text-2xl font-black leading-tight">{product.name}</h2>
             <p className="mt-2 text-sm leading-6 text-ink/68 dark:text-paper/68">{item.whySelected}</p>

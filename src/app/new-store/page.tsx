@@ -2,10 +2,12 @@ import { AppShell } from "@/components/app-shell";
 import { ExcludedNewStoreCard, NewStoreCard } from "@/components/new-store-card";
 import { PageHeader } from "@/components/page-header";
 import { getExcludedNewStoreProducts, getNewStoreRecommendations } from "@/lib/new-store-engine";
+import { getActiveProducts } from "@/lib/product-store";
 
-export default function NewStorePage() {
-  const beginnerProducts = getNewStoreRecommendations();
-  const excludedProducts = getExcludedNewStoreProducts();
+export default async function NewStorePage() {
+  const products = await getActiveProducts();
+  const beginnerProducts = getNewStoreRecommendations(products);
+  const excludedProducts = getExcludedNewStoreProducts(products);
 
   return (
     <AppShell>

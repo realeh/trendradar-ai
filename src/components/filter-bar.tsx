@@ -1,7 +1,6 @@
 "use client";
 
 import { SlidersHorizontal } from "lucide-react";
-import { categories, countries, platforms } from "@/lib/mock-products";
 
 export type SortKey = "trendScore" | "growth" | "category" | "country" | "platform";
 
@@ -13,7 +12,10 @@ export function FilterBar({
   country,
   setCountry,
   platform,
-  setPlatform
+  setPlatform,
+  categories,
+  countries,
+  platforms
 }: {
   sort: SortKey;
   setSort: (value: SortKey) => void;
@@ -23,6 +25,9 @@ export function FilterBar({
   setCountry: (value: string) => void;
   platform: string;
   setPlatform: (value: string) => void;
+  categories: string[];
+  countries: string[];
+  platforms: string[];
 }) {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-md border border-black/10 bg-white/65 p-3 dark:border-white/10 dark:bg-white/6">

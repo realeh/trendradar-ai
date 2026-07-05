@@ -19,7 +19,7 @@ export function TrendVelocityChart() {
             <LineChart size={17} className="text-coral" />
             Trend velocity
           </div>
-          <p className="mt-1 text-sm text-ink/58 dark:text-paper/58">Mock category momentum over the next 30 days</p>
+          <p className="mt-1 text-sm text-ink/58 dark:text-paper/58">Category momentum over the next 30 days</p>
         </div>
         <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-xs font-black text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-200">
           +18.4%

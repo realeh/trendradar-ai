@@ -236,18 +236,18 @@ const baseProducts: Product[] = [
   }
 ];
 
-export const products = baseProducts.map((product) => ({
+export const seedProducts = baseProducts.map((product) => ({
   ...product,
   launchScore: Math.round((product.launchScore + opportunityScore(product)) / 2)
 }));
 
-export const categories = Array.from(new Set(products.map((product) => product.category)));
-export const countries = Array.from(new Set(products.map((product) => product.country)));
-export const platforms = Array.from(new Set(products.map((product) => product.platform)));
+export const categories = Array.from(new Set(seedProducts.map((product) => product.category)));
+export const countries = Array.from(new Set(seedProducts.map((product) => product.country)));
+export const platforms = Array.from(new Set(seedProducts.map((product) => product.platform)));
 
 export function discoverProducts(query: string) {
   const normalized = query.toLowerCase();
-  let result = products;
+  let result = seedProducts;
 
   if (normalized.includes("australia")) result = result.filter((product) => product.country === "Australia");
   if (normalized.includes("tiktok")) result = result.filter((product) => product.platform === "TikTok");
@@ -256,17 +256,17 @@ export function discoverProducts(query: string) {
     result = result.filter((product) => product.saturation === "Low");
   }
 
-  return (result.length ? result : products)
+  return (result.length ? result : seedProducts)
     .sort((a, b) => opportunityScore(b) - opportunityScore(a))
     .slice(0, 4);
 }
 
 export function simulateProduct(input: string): SimulatorResult {
-  const existing = products.find((product) =>
+  const existing = seedProducts.find((product) =>
     input.toLowerCase().includes(product.name.toLowerCase().split(" ")[0])
   );
   const seed = input.length || 12;
-  const product = existing ?? products[seed % products.length];
+  const product = existing ?? seedProducts[seed % seedProducts.length];
   const successProbability = Math.min(94, Math.max(42, opportunityScore(product) + (existing ? 4 : -3)));
   const finalRecommendation = successProbability >= 76 && product.saturation === "Low" ? "Strong Test" : successProbability < 56 || product.saturation === "High" ? "Avoid" : "Test";
 

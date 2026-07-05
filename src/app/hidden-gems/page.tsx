@@ -2,9 +2,11 @@ import { AppShell } from "@/components/app-shell";
 import { HiddenGemCard } from "@/components/hidden-gem-card";
 import { PageHeader } from "@/components/page-header";
 import { getHiddenGemRecommendations } from "@/lib/hidden-gems-engine";
+import { getActiveProducts } from "@/lib/product-store";
 
-export default function HiddenGemsPage() {
-  const hidden = getHiddenGemRecommendations();
+export default async function HiddenGemsPage() {
+  const products = await getActiveProducts();
+  const hidden = getHiddenGemRecommendations(products);
   const warmingUp = hidden.filter((item) => item.saturationWarning).length;
 
   return (

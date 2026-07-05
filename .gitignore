@@ -2,6 +2,9 @@ node_modules
 .next
 .npm-cache
 .env
+.env.local
+.env.*.local
+!.env.example
 *.log
 
 ##############################
@@ -86,3 +89,5 @@ nb-configuration.xml
 ## OS X
 ##############################
 .DS_Store
+
+tsconfig.tsbuildinfo

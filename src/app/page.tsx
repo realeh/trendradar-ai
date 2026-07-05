@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { ArrowRight, Radar, Sparkles } from "lucide-react";
-import { products } from "@/lib/mock-products";
+import { getActiveProducts } from "@/lib/product-store";
 import { ProductCard } from "@/components/product-card";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const products = await getActiveProducts();
   const heroProduct = products[0];
 
   return (
@@ -49,6 +50,15 @@ export default function LandingPage() {
             <ProductCard product={heroProduct} />
           </div>
         </div>
+
+        <footer className="mx-auto mt-6 flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 border-t border-black/10 py-5 text-xs font-bold text-ink/50 dark:border-white/10 dark:text-paper/50">
+          <span>© {new Date().getFullYear()} TrendRadar AI</span>
+          <div className="flex flex-wrap gap-4">
+            <Link href="/terms" className="hover:text-ink dark:hover:text-paper">Terms</Link>
+            <Link href="/privacy" className="hover:text-ink dark:hover:text-paper">Privacy</Link>
+            <Link href="/refund-policy" className="hover:text-ink dark:hover:text-paper">Refunds</Link>
+          </div>
+        </footer>
       </section>
     </main>
   );

@@ -1,18 +1,47 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { AlertTriangle, BadgeDollarSign, Calculator, Facebook, Globe2, Megaphone, Package, Radar, Target, TrendingUp } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
-import { simulateProductAnalysis } from "@/lib/product-simulator-engine";
+import type { SimulatorResult } from "@/lib/types";
 
 export default function SimulatorPage() {
   const [input, setInput] = useState("Reusable Pet Fur Detailer");
-  const [result, setResult] = useState(simulateProductAnalysis(input));
+  const [result, setResult] = useState<SimulatorResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function runSimulation(value: string) {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: value })
+      });
+      const data = await response.json();
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
+      setResult(data.result as SimulatorResult);
+    } catch {
+      setError("Could not reach the simulator service. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    runSimulation(input);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    setResult(simulateProductAnalysis(input));
+    runSimulation(input);
   }
 
   return (
@@ -21,7 +50,7 @@ export default function SimulatorPage() {
         <PageHeader
           eyebrow="Product Simulator"
           title="Estimate launch viability"
-          description="Enter a product name or supplier link to generate a mock success estimate, audience, pricing, margin, competition, and ad angles."
+          description="Enter a product name or supplier link to generate a success estimate, audience, pricing, margin, competition, and ad angles based on your curated catalog."
         />
         <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
           <form onSubmit={submit} className="rounded-md border border-black/10 bg-white/68 p-5 shadow-panel dark:border-white/10 dark:bg-white/6">
@@ -32,15 +61,18 @@ export default function SimulatorPage() {
               rows={6}
               className="mt-2 w-full rounded-md border border-black/10 bg-paper p-3 outline-none focus:ring-2 focus:ring-tide dark:border-white/10 dark:bg-ink"
             />
-            <button className="mt-3 inline-flex items-center gap-2 rounded-md bg-coral px-5 py-3 font-black text-white">
+            <button disabled={loading} className="mt-3 inline-flex items-center gap-2 rounded-md bg-coral px-5 py-3 font-black text-white disabled:opacity-60">
               <Calculator size={18} />
-              Simulate
+              {loading ? "Simulating..." : "Simulate"}
             </button>
             <div className="mt-4 rounded-md bg-ink/5 p-4 text-sm leading-6 text-ink/64 dark:bg-white/8 dark:text-paper/64">
-              Paste a supplier URL, product page, or just type a product name. The MVP uses mock matching now and is structured for real page parsing later.
+              Paste a supplier URL, product page, or just type a product name. Matching runs against your curated catalog, not a live page-parsing crawler yet.
             </div>
           </form>
           <section className="rounded-md border border-black/10 bg-white/68 p-5 shadow-panel dark:border-white/10 dark:bg-white/6">
+            {error && <div className="rounded-md bg-coral/10 p-4 text-sm font-bold text-coral">{error}</div>}
+            {result && (
+            <>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="text-sm font-bold text-coral">{result.productName}</div>
@@ -93,6 +125,8 @@ export default function SimulatorPage() {
               <div className="text-sm font-black">Final recommendation</div>
               <p className="mt-2 text-sm leading-6 text-ink/68 dark:text-paper/68">{result.notes}</p>
             </div>
+            </>
+            )}
           </section>
         </div>
       </div>

@@ -1,6 +1,5 @@
 import type { Platform, Product, SimulatorResult } from "./types";
 import { forecastProduct } from "./forecast-engine";
-import { products } from "./mock-products";
 import { opportunityScore } from "./scoring";
 
 const countriesByCategory: Record<string, string[]> = {
@@ -13,8 +12,8 @@ const countriesByCategory: Record<string, string[]> = {
   Travel: ["Australia", "New Zealand", "United States"]
 };
 
-export function simulateProductAnalysis(input: string): SimulatorResult {
-  const product = matchProduct(input);
+export function simulateProductAnalysis(input: string, products: Product[]): SimulatorResult {
+  const product = matchProduct(input, products);
   const forecast = forecastProduct(product);
   const successProbability = successProbabilityFor(product);
   const finalRecommendation = recommendationFor(successProbability, product);
@@ -44,7 +43,7 @@ export function simulateProductAnalysis(input: string): SimulatorResult {
   };
 }
 
-function matchProduct(input: string): Product {
+function matchProduct(input: string, products: Product[]): Product {
   const normalized = input.toLowerCase();
   const cleaned = normalized.replace(/^https?:\/\//, "").replace(/[-_/?=&.]+/g, " ");
   const direct = products.find((product) => {

@@ -1,8 +1,7 @@
 import type { CompetitionLevel, HiddenGemRecommendation, Product } from "./types";
 import { forecastProduct } from "./forecast-engine";
-import { products } from "./mock-products";
 
-export function getHiddenGemRecommendations(): HiddenGemRecommendation[] {
+export function getHiddenGemRecommendations(products: Product[]): HiddenGemRecommendation[] {
   return products
     .map((product) => {
       const forecast = forecastProduct(product);

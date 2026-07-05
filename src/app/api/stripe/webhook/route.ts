@@ -43,5 +43,16 @@ export async function POST(request: Request) {
     });
   }
 
+  // Churn signal — this was documented in DEPLOYMENT.md as a listened-for
+  // event but was never actually handled here until now.
+  if (supabase && event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object;
+    await supabase.from("billing_events").insert({
+      stripe_event_id: event.id,
+      event_type: event.type,
+      payload: subscription
+    });
+  }
+
   return NextResponse.json({ received: true });
 }

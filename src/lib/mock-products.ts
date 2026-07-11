@@ -1,4 +1,4 @@
-import type { Product, SimulatorResult } from "./types";
+import type { Product } from "./types";
 import { opportunityScore } from "./scoring";
 
 const baseProducts: Product[] = [
@@ -261,35 +261,8 @@ export function discoverProducts(query: string) {
     .slice(0, 4);
 }
 
-export function simulateProduct(input: string): SimulatorResult {
-  const existing = seedProducts.find((product) =>
-    input.toLowerCase().includes(product.name.toLowerCase().split(" ")[0])
-  );
-  const seed = input.length || 12;
-  const product = existing ?? seedProducts[seed % seedProducts.length];
-  const successProbability = Math.min(94, Math.max(42, opportunityScore(product) + (existing ? 4 : -3)));
-  const finalRecommendation = successProbability >= 76 && product.saturation === "Low" ? "Strong Test" : successProbability < 56 || product.saturation === "High" ? "Avoid" : "Test";
-
-  return {
-    productName: input.trim() || product.name,
-    successProbability,
-    demandScore: product.demand,
-    targetAudience: product.targetAudience,
-    countries: [product.country],
-    bestAdPlatform: product.platform,
-    sellingPrice: product.suggestedPrice,
-    productCost: product.estimatedCost,
-    estimatedProfit: product.suggestedPrice - product.estimatedCost,
-    suggestedPrice: product.suggestedPrice,
-    profitMargin: product.profitMargin,
-    competition: product.saturation,
-    competitionScore: product.competition,
-    saturation: product.saturation,
-    tiktokHooks: product.adAngles.map((angle) => `${angle} demo`),
-    facebookAdAngles: product.adAngles,
-    potentialProblems: product.risks,
-    finalRecommendation,
-    adAngles: product.adAngles,
-    notes: product.aiRecommendation
-  };
-}
+// Note: the old simulateProduct() helper that used to live here was dead
+// code (never imported anywhere) and had the same "silently substitute an
+// unrelated product" bug that's now fixed in product-simulator-engine.ts,
+// which is the real implementation the /simulator page and /api/simulate
+// route actually use. Removed rather than patched to avoid confusion.

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Radar } from "lucide-react";
 import { LoginForm } from "@/components/login-form";
 
@@ -16,7 +17,9 @@ export default function LoginPage() {
         <p className="mt-2 text-sm leading-6 text-ink/62 dark:text-paper/62">
           Sign in or create an account. New accounts get a confirmation email before their first login.
         </p>
-        <LoginForm />
+        <Suspense fallback={null}>
+          <LoginForm />
+        </Suspense>
       </section>
     </main>
   );

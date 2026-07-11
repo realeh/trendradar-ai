@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  Activity,
   Bell,
   BarChart3,
   CreditCard,
@@ -14,7 +13,6 @@ import {
   Menu,
   Radar,
   Search,
-  ShieldCheck,
   Sparkles,
   Store,
   Wand2,
@@ -22,7 +20,12 @@ import {
 } from "lucide-react";
 import { clsx } from "clsx";
 import { ThemeToggle } from "./theme-toggle";
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser";
+import { hasActiveAccess } from "@/lib/stripe-plans";
 
+// Founder-only tools (/admin/curate, /admin/analytics) are deliberately left
+// off this customer-facing nav — they're gated by ADMIN_SECRET, not by
+// subscription, and there's no reason to advertise them to paying customers.
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/ai-discovery", label: "AI Discovery", icon: Search },
@@ -31,14 +34,19 @@ const navItems = [
   { href: "/hidden-gems", label: "Hidden Gems", icon: Gem },
   { href: "/simulator", label: "Simulator", icon: Wand2 },
   { href: "/pricing", label: "Pricing", icon: CreditCard },
-  { href: "/account", label: "Account", icon: LogIn },
-  { href: "/admin/curate", label: "Curate Catalog", icon: ShieldCheck },
-  { href: "/admin/analytics", label: "Analytics", icon: Activity }
+  { href: "/account", label: "Account", icon: LogIn }
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+type Gate = "public" | "auth" | "subscription";
+
+export function AppShell({ children, gate = "subscription" }: { children: React.ReactNode; gate?: Gate }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [checking, setChecking] = useState(gate !== "public");
+  const [allowed, setAllowed] = useState(gate === "public");
+  const [planInfo, setPlanInfo] = useState<{ plan: string | null; status: string | null } | null>(null);
+  const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -50,6 +58,88 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       document.body.style.overflow = "";
     };
   }, [menuOpen]);
+
+  // Access gate: below "public", every protected page requires a logged-in
+  // session, and "subscription" pages additionally require an active/trialing
+  // plan on the user's profile. This runs client-side (the app is already a
+  // client-component-heavy codebase), so middleware.ts is a defense-in-depth
+  // login check ahead of this, not a replacement for it.
+  useEffect(() => {
+    let cancelled = false;
+
+    if (gate !== "public") {
+      setChecking(true);
+      setAllowed(false);
+    }
+
+    (async () => {
+      const supabase = createBrowserSupabaseClient();
+      if (!supabase) {
+        // Supabase isn't configured (local/demo mode) — fail open rather
+        // than lock the whole app out with no way to log in at all.
+        if (!cancelled) {
+          setAllowed(true);
+          setChecking(false);
+        }
+        return;
+      }
+
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+
+      if (!cancelled) setLoggedIn(Boolean(session));
+
+      if (gate === "public") return;
+
+      if (!session) {
+        router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+        return;
+      }
+
+      if (gate === "auth") {
+        if (!cancelled) {
+          setAllowed(true);
+          setChecking(false);
+        }
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("plan, subscription_status")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (!hasActiveAccess(profile?.subscription_status)) {
+        router.replace("/pricing?upgrade=required");
+        return;
+      }
+
+      if (!cancelled) {
+        setPlanInfo({ plan: profile?.plan ?? null, status: profile?.subscription_status ?? null });
+        setAllowed(true);
+        setChecking(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gate, pathname, router]);
+
+  if (checking) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-paper text-ink dark:bg-night dark:text-paper">
+        <div className="flex items-center gap-3 text-sm font-bold text-ink/55 dark:text-paper/55">
+          <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          Checking your account...
+        </div>
+      </div>
+    );
+  }
+
+  if (!allowed) return null;
 
   return (
     <div className="min-h-screen bg-paper text-ink dark:bg-night dark:text-paper">
@@ -98,14 +188,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="absolute bottom-5 left-4 right-4 rounded-md border border-black/10 bg-white/62 p-4 shadow-panel dark:border-white/10 dark:bg-white/[0.055]">
           <div className="flex items-center gap-2 text-sm font-black">
             <Sparkles size={16} />
-            Pro Trial
+            {planInfo?.plan ? `${capitalize(planInfo.plan)} plan` : "Account"}
           </div>
           <p className="mt-2 text-sm leading-5 text-ink/65 dark:text-paper/65">
-            Forecasts and launch scoring run on your curated catalog. Add more products in Curate Catalog to sharpen them.
+            {planInfo?.status
+              ? `Subscription status: ${capitalize(planInfo.status)}.`
+              : "Forecasts and launch scoring run on your curated catalog."}
           </p>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
-            <div className="h-full w-[68%] rounded-full bg-coral" />
-          </div>
+          <Link
+            href="/account"
+            className="mt-3 inline-block text-xs font-black text-tide underline dark:text-cyan-200"
+          >
+            Manage billing
+          </Link>
         </div>
       </aside>
 
@@ -194,10 +289,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </button>
               <ThemeToggle />
               <Link
-                href="/login"
+                href={loggedIn ? "/account" : "/login"}
                 className="rounded-md bg-ink px-4 py-2 text-sm font-black text-paper shadow-panel transition hover:-translate-y-0.5 hover:bg-ink/88 dark:bg-paper dark:text-ink dark:hover:bg-paper/88"
               >
-                Login
+                {loggedIn ? "Account" : "Login"}
               </Link>
             </div>
           </div>
@@ -206,4 +301,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
     </div>
   );
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

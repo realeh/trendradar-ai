@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Radar } from "lucide-react";
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser";
 
 export function CheckoutButton({ plan }: { plan: string }) {
   const [loading, setLoading] = useState(false);
@@ -11,9 +12,22 @@ export function CheckoutButton({ plan }: { plan: string }) {
     setLoading(true);
     setError("");
 
+    const supabase = createBrowserSupabaseClient();
+    const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+
+    if (supabase && !session) {
+      // Subscribing requires an account so the webhook can tie the payment
+      // back to a user. Send them to log in, then straight back here.
+      window.location.href = `/login?next=${encodeURIComponent("/pricing")}`;
+      return;
+    }
+
     const response = await fetch("/api/stripe/checkout", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(session ? { Authorization: `Bearer ${session.access_token}` } : {})
+      },
       body: JSON.stringify({ plan })
     });
 

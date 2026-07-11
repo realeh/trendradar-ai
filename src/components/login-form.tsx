@@ -1,15 +1,20 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Loader2, LogIn } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser";
 
 export function LoginForm() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/dashboard";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -19,7 +24,7 @@ export function LoginForm() {
     const supabase = createBrowserSupabaseClient();
     if (!supabase) {
       setMessage("Supabase keys are not configured yet. Continuing in local demo mode.");
-      window.location.href = "/dashboard";
+      window.location.href = next;
       return;
     }
 
@@ -46,7 +51,35 @@ export function LoginForm() {
       return;
     }
 
-    window.location.href = "/dashboard";
+    window.location.href = next;
+  }
+
+  async function sendResetEmail() {
+    if (!email) {
+      setMessage("Enter your email above first, then click \"Forgot password?\" again.");
+      return;
+    }
+    setLoading(true);
+    setMessage("");
+
+    const supabase = createBrowserSupabaseClient();
+    if (!supabase) {
+      setMessage("Supabase keys are not configured yet.");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+
+    setLoading(false);
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+    setResetSent(true);
+    setMessage(`If an account exists for ${email}, a password reset link is on its way.`);
   }
 
   return (
@@ -72,6 +105,17 @@ export function LoginForm() {
           className="mt-2 w-full rounded-md border border-black/10 bg-paper px-3 py-3 outline-none focus:ring-2 focus:ring-tide dark:border-white/10 dark:bg-ink"
         />
       </label>
+
+      {mode === "login" && !resetSent && (
+        <button
+          type="button"
+          onClick={sendResetEmail}
+          disabled={loading}
+          className="text-sm font-bold text-tide underline disabled:opacity-60 dark:text-cyan-200"
+        >
+          Forgot password?
+        </button>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         <button

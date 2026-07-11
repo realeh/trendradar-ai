@@ -1,20 +1,29 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { AlertTriangle, BadgeDollarSign, Calculator, Facebook, Globe2, Megaphone, Package, Radar, Target, TrendingUp } from "lucide-react";
+import { AlertTriangle, BadgeDollarSign, Calculator, ExternalLink, Facebook, Globe2, Megaphone, Package, Radar, Target, TrendingUp } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import type { SimulatorResult } from "@/lib/types";
 
+const matchTypeLabel: Record<SimulatorResult["matchType"], string> = {
+  catalog_name: "Matched your curated catalog",
+  catalog_category: "Closest category match in your curated catalog",
+  live_cj_search: "Live result from CJ Dropshipping (not yet curated)"
+};
+
 export default function SimulatorPage() {
   const [input, setInput] = useState("Reusable Pet Fur Detailer");
   const [result, setResult] = useState<SimulatorResult | null>(null);
+  const [noMatchMessage, setNoMatchMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function runSimulation(value: string) {
     setLoading(true);
     setError(null);
+    setNoMatchMessage(null);
+    setResult(null);
     try {
       const response = await fetch("/api/simulate", {
         method: "POST",
@@ -24,6 +33,10 @@ export default function SimulatorPage() {
       const data = await response.json();
       if (data.error) {
         setError(data.error);
+        return;
+      }
+      if (data.noMatch) {
+        setNoMatchMessage(data.message as string);
         return;
       }
       setResult(data.result as SimulatorResult);
@@ -50,7 +63,7 @@ export default function SimulatorPage() {
         <PageHeader
           eyebrow="Product Simulator"
           title="Estimate launch viability"
-          description="Enter a product name or supplier link to generate a success estimate, audience, pricing, margin, competition, and ad angles based on your curated catalog."
+          description="Enter a product name or supplier link to generate a success estimate, audience, pricing, margin, competition, and ad angles — checked against your curated catalog first, then a live CJ Dropshipping search if it's not there yet."
         />
         <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
           <form onSubmit={submit} className="rounded-md border border-black/10 bg-white/68 p-5 shadow-panel dark:border-white/10 dark:bg-white/6">
@@ -66,16 +79,36 @@ export default function SimulatorPage() {
               {loading ? "Simulating..." : "Simulate"}
             </button>
             <div className="mt-4 rounded-md bg-ink/5 p-4 text-sm leading-6 text-ink/64 dark:bg-white/8 dark:text-paper/64">
-              Paste a supplier URL, product page, or just type a product name. Matching runs against your curated catalog, not a live page-parsing crawler yet.
+              Type a product name. We check your curated catalog first; if it's not there, we search CJ Dropshipping's live catalog for a real match instead of guessing. Pasted URLs aren't parsed yet — type the product name instead.
             </div>
           </form>
           <section className="rounded-md border border-black/10 bg-white/68 p-5 shadow-panel dark:border-white/10 dark:bg-white/6">
             {error && <div className="rounded-md bg-coral/10 p-4 text-sm font-bold text-coral">{error}</div>}
+            {noMatchMessage && (
+              <div className="rounded-md bg-ink/5 p-4 text-sm leading-6 text-ink/68 dark:bg-white/8 dark:text-paper/68">
+                {noMatchMessage}
+              </div>
+            )}
             {result && (
             <>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <div className="text-sm font-bold text-coral">{result.productName}</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-bold text-coral">{result.productName}</span>
+                  <span className="rounded-md bg-ink/[0.06] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-ink/55 dark:bg-white/10 dark:text-paper/60">
+                    {matchTypeLabel[result.matchType]}
+                  </span>
+                  {result.sourceUrl && (
+                    <a
+                      href={result.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-tide underline dark:text-cyan-200"
+                    >
+                      View supplier <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
                 <h2 className="mt-1 text-3xl font-black">{result.successProbability}% success probability</h2>
               </div>
               <div className={`rounded-md px-4 py-3 text-sm font-black ${recommendationClass(result.finalRecommendation)}`}>

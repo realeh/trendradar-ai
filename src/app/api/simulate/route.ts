@@ -16,7 +16,15 @@ export async function POST(request: Request) {
   }
 
   const products = await getActiveProducts();
-  const result = simulateProductAnalysis(input, products);
+  const outcome = await simulateProductAnalysis(input, products);
 
-  return noStoreJson({ result });
+  if (!outcome.found) {
+    return noStoreJson({
+      result: null,
+      noMatch: true,
+      message: `No match for "${outcome.query}" in your curated catalog or CJ Dropshipping's live search. Try a more general product name or category.`
+    });
+  }
+
+  return noStoreJson({ result: outcome.result });
 }

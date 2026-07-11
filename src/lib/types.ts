@@ -136,8 +136,12 @@ export type CommerceAIResponse = {
   recommendations: CommerceRecommendation[];
 };
 
+export type SimulatorMatchType = "catalog_name" | "catalog_category" | "live_cj_search";
+
 export type SimulatorResult = {
   productName: string;
+  matchType: SimulatorMatchType;
+  sourceUrl?: string;
   successProbability: number;
   demandScore: number;
   targetAudience: string;
@@ -158,3 +162,5 @@ export type SimulatorResult = {
   adAngles: string[];
   notes: string;
 };
+
+export type SimulatorOutcome = { found: true; result: SimulatorResult } | { found: false; query: string };

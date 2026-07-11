@@ -33,7 +33,7 @@ export async function simulateProductAnalysis(input: string, products: Product[]
   const forecast = forecastProduct(product);
   const successProbability = successProbabilityFor(product);
   const finalRecommendation = recommendationFor(successProbability, product);
-  const estimatedProfit = Math.max(0, product.suggestedPrice - product.estimatedCost);
+  const estimatedProfit = Math.round(Math.max(0, product.suggestedPrice - product.estimatedCost) * 100) / 100;
 
   return {
     found: true,

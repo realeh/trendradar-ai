@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/page-header";
 import { integrationRoadmap } from "@/lib/integrations";
 import { getActiveProducts } from "@/lib/product-store";
 
+export const revalidate = 60;
+
 export default async function DashboardPage() {
   const products = await getActiveProducts();
   const isDemoData = products[0]?.dataSource === "demo";

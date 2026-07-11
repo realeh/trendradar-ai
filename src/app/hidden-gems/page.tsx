@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/page-header";
 import { getHiddenGemRecommendations } from "@/lib/hidden-gems-engine";
 import { getActiveProducts } from "@/lib/product-store";
 
+export const revalidate = 60;
+
 export default async function HiddenGemsPage() {
   const products = await getActiveProducts();
   const hidden = getHiddenGemRecommendations(products);

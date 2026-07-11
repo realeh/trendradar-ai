@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/page-header";
 import { getExcludedNewStoreProducts, getNewStoreRecommendations } from "@/lib/new-store-engine";
 import { getActiveProducts } from "@/lib/product-store";
 
+export const revalidate = 60;
+
 export default async function NewStorePage() {
   const products = await getActiveProducts();
   const beginnerProducts = getNewStoreRecommendations(products);

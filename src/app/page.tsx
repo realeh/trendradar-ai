@@ -3,6 +3,8 @@ import { ArrowRight, Radar, Sparkles } from "lucide-react";
 import { getActiveProducts } from "@/lib/product-store";
 import { ProductCard } from "@/components/product-card";
 
+export const revalidate = 60;
+
 export default async function LandingPage() {
   const products = await getActiveProducts();
   const heroProduct = products[0];

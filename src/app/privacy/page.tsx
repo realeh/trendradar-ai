@@ -9,8 +9,8 @@ export default function PrivacyPage() {
   return (
     <LegalLayout title="Privacy Policy" updated="July 5, 2026">
       <p>
-        This Privacy Policy explains what information TrendRadar AI (&quot;we&quot;, &quot;us&quot;) collects, how we
-        use it, and the choices you have.
+        This Privacy Policy explains what information TrendRadar AI, operated by Ethan Hung of
+        Victoria, Australia (&quot;we&quot;, &quot;us&quot;), collects, how we use it, and the choices you have.
       </p>
 
       <LegalSection title="1. Information we collect">

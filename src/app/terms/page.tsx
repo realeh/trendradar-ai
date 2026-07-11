@@ -10,7 +10,7 @@ export default function TermsPage() {
     <LegalLayout title="Terms of Service" updated="July 5, 2026">
       <p>
         These Terms of Service (&quot;Terms&quot;) govern access to and use of TrendRadar AI (the &quot;Service&quot;),
-        operated by [Your Business Legal Name — to be added once your business entity is registered] (&quot;we&quot;,
+        operated by Ethan Hung, trading as TrendRadar AI, of Victoria, Australia (&quot;we&quot;,
         &quot;us&quot;). By creating an account or using the Service, you agree to these Terms.
       </p>
 
@@ -97,7 +97,7 @@ export default function TermsPage() {
       </LegalSection>
 
       <LegalSection title="11. Governing law">
-        <p>These Terms are governed by the laws of [Your State/Country — to be finalized with your business registration], without regard to conflict-of-law principles.</p>
+        <p>These Terms are governed by the laws of Victoria, Australia, without regard to conflict-of-law principles.</p>
       </LegalSection>
 
       <LegalSection title="12. Contact">

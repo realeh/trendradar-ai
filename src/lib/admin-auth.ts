@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 
 /**
  * Minimal shared-secret gate for the curation admin tooling (/admin/curate and
@@ -10,6 +11,19 @@ import { NextResponse } from "next/server";
  * Fails closed: if ADMIN_SECRET isn't set, every request is rejected rather
  * than silently allowed.
  */
+function timingSafeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  // Buffers must be equal length for timingSafeEqual; comparing against a
+  // same-length dummy first avoids leaking length information via a thrown
+  // error or an early-exit comparison.
+  if (bufA.length !== bufB.length) {
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 export function requireAdmin(request: Request) {
   const configured = process.env.ADMIN_SECRET;
   if (!configured) {
@@ -20,7 +34,7 @@ export function requireAdmin(request: Request) {
   }
 
   const provided = request.headers.get("x-admin-secret");
-  if (!provided || provided !== configured) {
+  if (!provided || !timingSafeEqual(provided, configured)) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 

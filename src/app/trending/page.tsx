@@ -3,6 +3,8 @@ import { PageHeader } from "@/components/page-header";
 import { TrendingBoard } from "@/components/trending-board";
 import { deriveFilterOptions, getActiveProducts } from "@/lib/product-store";
 
+export const revalidate = 60;
+
 export default async function TrendingPage() {
   const products = await getActiveProducts();
   const { categories, countries, platforms } = deriveFilterOptions(products);

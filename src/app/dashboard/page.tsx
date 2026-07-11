@@ -1,17 +1,38 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { CommerceChat } from "@/components/commerce-chat";
 import { CategoryMomentum, EmptyStateCard, LoadingInsightCard, SignalTimeline, TrendVelocityChart } from "@/components/dashboard-visuals";
 import { KpiCard } from "@/components/kpi-card";
 import { PageHeader } from "@/components/page-header";
 import { integrationRoadmap } from "@/lib/integrations";
-import { getActiveProducts } from "@/lib/product-store";
+import { getAuthHeaders } from "@/lib/supabase-browser";
+import type { Product } from "@/lib/types";
 
-export const revalidate = 60;
+type DashboardData = { products: Product[]; isDemoData: boolean; lowSaturationCount: number };
 
-export default async function DashboardPage() {
-  const products = await getActiveProducts();
-  const isDemoData = products[0]?.dataSource === "demo";
-  const lowSaturationCount = products.filter((product) => product.saturation === "Low").length;
+export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const authHeaders = await getAuthHeaders();
+      const res = await fetch("/api/protected/dashboard", { headers: authHeaders });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? "Could not load your dashboard.");
+        return;
+      }
+      setData(json as DashboardData);
+    })();
+  }, []);
+
+  const products = data?.products ?? [];
+  const avgLaunchScore = products.length
+    ? Math.round(products.reduce((sum, p) => sum + p.launchScore, 0) / products.length)
+    : 0;
 
   return (
     <AppShell>
@@ -21,15 +42,18 @@ export default async function DashboardPage() {
           title="Ask the consultant"
           description="The dashboard now starts with strategic AI chat: ask about markets, budget, platform fit, saturation, margin, trend forecasts, and beginner launch risk."
         />
-        {isDemoData && (
+
+        {error && <div className="rounded-md bg-coral/10 p-4 text-sm font-bold text-coral">{error}</div>}
+
+        {data?.isDemoData && (
           <div className="rounded-md border border-coral/30 bg-coral/10 p-4 text-sm font-bold text-coral">
             You are viewing demo data. Curate real products at <code>/admin/curate</code> to replace it with live CJ Dropshipping catalog data.
           </div>
         )}
         <div className="grid gap-4 md:grid-cols-4">
-          <KpiCard label="Tracked products" value={String(products.length)} detail={isDemoData ? "Demo records" : "Curated catalog records"} />
-          <KpiCard label="Avg launch score" value={String(Math.round(products.reduce((sum, p) => sum + p.launchScore, 0) / (products.length || 1)))} detail="Beginner-readiness index" />
-          <KpiCard label="Low saturation" value={String(lowSaturationCount)} detail="Hidden gem candidates" />
+          <KpiCard label="Tracked products" value={String(products.length)} detail={data?.isDemoData ? "Demo records" : "Curated catalog records"} />
+          <KpiCard label="Avg launch score" value={String(avgLaunchScore)} detail="Beginner-readiness index" />
+          <KpiCard label="Low saturation" value={String(data?.lowSaturationCount ?? 0)} detail="Hidden gem candidates" />
           <KpiCard label="API adapters" value="8" detail="Prepared integration targets" />
         </div>
 

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Brain, Send, Sparkles } from "lucide-react";
 import type { CommerceAIResponse } from "@/lib/types";
+import { getAuthHeaders } from "@/lib/supabase-browser";
 import { CommerceRecommendationCard } from "./commerce-recommendation-card";
 
 const prompts = [
@@ -35,13 +36,15 @@ export function CommerceChat({ compact = false }: { compact?: boolean }) {
     setLoading(true);
     setError(null);
 
-    fetch("/api/ai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: question })
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    (async () => {
+      try {
+        const authHeaders = await getAuthHeaders();
+        const res = await fetch("/api/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders },
+          body: JSON.stringify({ query: question })
+        });
+        const data = await res.json();
         if (cancelled) return;
         if (data.error) {
           setError(data.error);
@@ -50,13 +53,12 @@ export function CommerceChat({ compact = false }: { compact?: boolean }) {
         setResponse(data.response as CommerceAIResponse);
         setAssistantMessage(typeof data.assistantMessage === "string" ? data.assistantMessage : null);
         setMode((data.mode as AiMode) ?? null);
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setError("Could not reach the AI service. Please try again.");
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;

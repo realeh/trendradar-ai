@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { AlertTriangle, BadgeDollarSign, Calculator, ExternalLink, Facebook, Globe2, Megaphone, Package, Radar, Target, TrendingUp } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
+import { getAuthHeaders } from "@/lib/supabase-browser";
 import type { SimulatorResult } from "@/lib/types";
 
 const matchTypeLabel: Record<SimulatorResult["matchType"], string> = {
@@ -25,9 +26,10 @@ export default function SimulatorPage() {
     setNoMatchMessage(null);
     setResult(null);
     try {
+      const authHeaders = await getAuthHeaders();
       const response = await fetch("/api/simulate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ input: value })
       });
       const data = await response.json();

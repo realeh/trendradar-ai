@@ -5,19 +5,13 @@ import { CreditCard, Loader2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser";
-import { getAIConfigStatus, getAIProvider, getStripeConfigStatus, getSupabaseConfigStatus } from "@/lib/integrations";
 
-const aiProvider = getAIProvider();
-
-const checks = [
-  { label: "Supabase auth/database", ready: getSupabaseConfigStatus(), env: "NEXT_PUBLIC_SUPABASE_URL" },
-  { label: "Stripe subscriptions", ready: getStripeConfigStatus(), env: "STRIPE_SECRET_KEY" },
-  {
-    label: aiProvider === "claude" ? "Claude AI responses" : aiProvider === "openai" ? "OpenAI responses" : "AI responses",
-    ready: getAIConfigStatus(),
-    env: "ANTHROPIC_API_KEY or OPENAI_API_KEY"
-  }
-];
+type IntegrationStatus = {
+  supabase: boolean;
+  stripe: boolean;
+  ai: boolean;
+  aiProvider: "claude" | "openai" | null;
+};
 
 type Profile = {
   email: string | null;
@@ -31,6 +25,7 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState("");
+  const [integrations, setIntegrations] = useState<IntegrationStatus | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -55,6 +50,35 @@ export default function AccountPage() {
       setLoading(false);
     })();
   }, []);
+
+  useEffect(() => {
+    // These env-var checks (STRIPE_SECRET_KEY, ANTHROPIC_API_KEY, etc.) only
+    // exist server-side — reading them directly in this client component
+    // would always read `undefined` in the browser bundle and wrongly show
+    // "Needs keys" even when everything is configured. /api/health already
+    // computes this server-side, so fetch it instead of duplicating logic.
+    fetch("/api/health")
+      .then((res) => res.json())
+      .then((json) => setIntegrations(json.integrations as IntegrationStatus))
+      .catch(() => setIntegrations(null));
+  }, []);
+
+  const checks = integrations
+    ? [
+        { label: "Supabase auth/database", ready: integrations.supabase, env: "NEXT_PUBLIC_SUPABASE_URL" },
+        { label: "Stripe subscriptions", ready: integrations.stripe, env: "STRIPE_SECRET_KEY" },
+        {
+          label:
+            integrations.aiProvider === "claude"
+              ? "Claude AI responses"
+              : integrations.aiProvider === "openai"
+                ? "OpenAI responses"
+                : "AI responses",
+          ready: integrations.ai,
+          env: "ANTHROPIC_API_KEY or OPENAI_API_KEY"
+        }
+      ]
+    : [];
 
   async function openBillingPortal() {
     setPortalLoading(true);

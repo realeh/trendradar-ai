@@ -18,3 +18,21 @@ export function createBrowserSupabaseClient() {
   cachedClient = !url || !anonKey ? null : createClient(url, anonKey);
   return cachedClient;
 }
+
+/**
+ * Fetch headers carrying the current session's bearer token, for calling
+ * protected API routes (requireUser/requireActiveSubscription on the server
+ * side check this same header). Returns {} if there's no session — the
+ * server route will then correctly reject with 401/402 rather than silently
+ * serving data.
+ */
+export async function getAuthHeaders(): Promise<Record<string, string>> {
+  const supabase = createBrowserSupabaseClient();
+  if (!supabase) return {};
+
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+
+  return session ? { Authorization: `Bearer ${session.access_token}` } : {};
+}

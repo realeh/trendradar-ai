@@ -103,6 +103,39 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- The "editable by owner" UPDATE policy above has no WITH CHECK and no
+-- column restriction, which means (by itself) a logged-in user could call
+-- supabase.from('profiles').update({ subscription_status: 'active', plan:
+-- 'scale' }) directly from browser JS and grant themselves paid access
+-- without ever paying — RLS only confirms *whose* row is being touched, not
+-- *which columns* may change. This trigger closes that: browser-originated
+-- writes (Postgres roles "anon" and "authenticated", i.e. anon-key and
+-- user-JWT requests via PostgREST) cannot change billing fields. Only the
+-- service-role client (used by /api/stripe/webhook, via SUPABASE_SERVICE_ROLE_KEY)
+-- and dashboard/SQL-editor access (role "postgres") can.
+create or replace function public.protect_profile_billing_fields()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if current_user in ('anon', 'authenticated') then
+    if new.subscription_status is distinct from old.subscription_status
+       or new.plan is distinct from old.plan
+       or new.stripe_customer_id is distinct from old.stripe_customer_id
+       or new.stripe_subscription_id is distinct from old.stripe_subscription_id then
+      raise exception 'Billing fields can only be changed by the system, not directly by users.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_profiles_billing_fields on public.profiles;
+create trigger protect_profiles_billing_fields
+  before update on public.profiles
+  for each row execute function public.protect_profile_billing_fields();
+
 -- Real curated product catalog (sourced from CJ Dropshipping + admin/AI curation).
 -- Documented here for reproducibility; if this table already exists in your
 -- project (it was originally created directly via the Supabase SQL editor),

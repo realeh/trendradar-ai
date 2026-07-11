@@ -1,4 +1,4 @@
-import type { Platform, Product, SimulatorMatchType, SimulatorOutcome } from "./types";
+import type { Platform, Product, SimulatorMatchType, SimulatorOutcome, SimulatorResult } from "./types";
 import { forecastProduct } from "./forecast-engine";
 import { opportunityScore } from "./scoring";
 import { isCjConfigured, searchCjProducts } from "./cj-client";

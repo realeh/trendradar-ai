@@ -135,7 +135,7 @@ function cjResultToProduct(scored: ReturnType<typeof scoreCjProduct>): Product {
       saturation === "High" ? "Already widely listed — differentiation will be hard." : "Limited validation beyond this live CJ snapshot.",
       "Not yet reviewed by your curated catalog — treat this as an early, unvetted lead."
     ],
-    similarAlternatives: [],
+    similarAlternatives: [`Other ${category.toLowerCase()} listings on CJ Dropshipping`],
     adAngles: [`Show the ${category.toLowerCase()} problem it solves in the first 2 seconds of a UGC-style video.`],
     dataSource: "cj_dropshipping",
     cjProductId: cj.id,
